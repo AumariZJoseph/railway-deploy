@@ -1,0 +1,40 @@
+# backend/requirements-optimized.txt
+# Core web framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Database & API clients
+supabase
+httpx
+python-dotenv
+
+# Document processing
+python-docx
+pandas
+openpyxl
+pymupdf
+
+# Utilities
+pydantic
+tqdm
+requests
+aiofiles
+python-dateutil
+python-magic
+bleach
+tenacity
+aiohttp
+async-timeout
+
+# AI/ML - PyTorch will be installed separately
+transformers
+sentence-transformers
+huggingface-hub
+
+# LlamaIndex
+llama-index-core
+llama-index-llms-groq
+
+# REMOVED: torch (will install separately)
+# REMOVED: faiss-cpu, langchain, etc.
