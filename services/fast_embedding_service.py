@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 
 class FastEmbeddingService:
     def __init__(self):
-        # Switch to smaller model - 80MB vs 130MB
-        self.model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        # Use the better embedding model from old system
+        self.model_name = "BAAI/bge-small-en-v1.5"
         self.dimension = 384
         self._model = None
         self._model_loaded = False
