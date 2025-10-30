@@ -144,10 +144,18 @@ class SupabaseClient:
 
     # -------------------- File Operations --------------------
     def upload_file(self, user_id: str, file_data: bytes, file_name: str) -> str:
-        """Upload file to storage with retry logic"""
+        """Upload file to storage with conflict resolution"""
         storage_path = f"{user_id}/{file_name}"
         
         def _upload():
+            #First, try to delete the existing file if it exists
+            try:
+                self.client.storage.from_(self.bucket_name).remove([storage_path])
+                logger.info(f"Removed existing file: {storage_path}")
+            except Exception as e:
+                # File might not exist, which is fine
+                logger.debug(f"No existing file to remove: {storage_path}")
+
             with httpx.Client(timeout=120.0) as client:
                 response = client.post(
                     f"{self.url}/storage/v1/object/{self.bucket_name}/{storage_path}",
