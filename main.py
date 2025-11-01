@@ -28,7 +28,7 @@ app.add_exception_handler(AppError, global_exception_handler)
 # CORS configuration! Uncomment out in prod!
 allowed_origins = os.getenv(
     "ALLOWED_ORIGINS", 
-    "http://localhost:3000,http://127.0.0.1:3000,192.168.0.61,https://brain-bin-eight.vercel.app"
+    "http://localhost:3000,http://127.0.0.1:3000,192.168.0.61,https://brain-bin-eight.vercel.app,https://railway-deploy-production-ae5d.up.railway.app"
 ).split(",")
 
 app.add_middleware(
