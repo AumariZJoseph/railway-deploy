@@ -34,9 +34,9 @@ class FileSafetyService:
         
         # Maximum file sizes (in bytes)
         self.max_file_sizes = {
-            '.pdf': 3 * 1024 * 1024,      # 3MB
-            '.docx': 3 * 1024 * 1024,     # 3MB
-            '.doc': 3 * 1024 * 1024,      # 3MB
+            '.pdf': 10 * 1024 * 1024,      # 3MB
+            '.docx': 10 * 1024 * 1024,     # 3MB
+            '.doc': 10 * 1024 * 1024,      # 3MB
             '.txt': 1 * 1024 * 1024,      # 1MB
             '.csv': 5 * 1024 * 1024,      # 5MB
             '.xlsx': 5 * 1024 * 1024,     # 5MB
