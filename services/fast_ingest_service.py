@@ -266,8 +266,11 @@ class FastIngestService:
                 raise ValidationError("Invalid user ID or filename", "Invalid identifiers.")
 
             loop = asyncio.get_event_loop()
+
             await loop.run_in_executor(None, supabase_client.soft_delete_document, user_id, file_name)
-            await loop.run_in_executor(None, supabase_client.delete_file, f"{user_id}/{file_name}")
+
+            await loop.run_in_executor(None, supabase_client.delete_file, user_id, file_name)
+
             logger.info(f"Deleted: {file_name}")
             return {"status": "success", "message": f"Deleted {file_name}"}
 

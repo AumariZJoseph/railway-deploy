@@ -176,10 +176,28 @@ class SupabaseClient:
             return self.client.storage.from_(self.bucket_name).download(storage_path)
         return self._retry_operation(_download)
 
-    def delete_file(self, storage_path: str):
-        """Delete file from storage"""
+    def delete_file(self, user_id: str, file_name: str):
+        """Delete specific file from storage"""
+
+        if not user_id or not file_name:
+            raise ValueError("User ID and file name must be provided")
+
+        storage_path = f"{user_id}/{file_name}"
+
         def _delete():
-            self.client.storage.from_(self.bucket_name).remove([storage_path])
+            delete_url = f"{self.url}/storage/v1/object/{self.bucket_name}/{storage_path}"
+
+            with httpx.Client() as client:
+                response = client.delete(
+                    delete_url,
+                    headers={
+                        "Authorization": f"Bearer {self.key}",
+                        "apikey": self.key
+                    }
+                )
+                response.raise_for_status()
+
+            self.client.storage.from_(self.bucket_name).remove(storage_path)
         return self._retry_operation(_delete)
 
     def list_user_files(self, user_id: str) -> List[str]:
