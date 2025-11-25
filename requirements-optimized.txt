@@ -12,7 +12,6 @@ python-dotenv
 # Document processing
 python-docx
 pandas
-openpyxl
 pymupdf
 
 # Utilities

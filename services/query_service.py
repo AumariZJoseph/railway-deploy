@@ -94,7 +94,7 @@ class QueryService:
             # -----------------------------
             try:
                 similar_chunks = supabase_client.search_similar_chunks(
-                    user_id, question_embedding, limit=10
+                    user_id, question_embedding, limit=15
                 )
                 logger.info(f"Found {len(similar_chunks)} potential chunks")
             except Exception as e:
@@ -108,7 +108,7 @@ class QueryService:
             # -----------------------------
             filtered_chunks = [
                 chunk for chunk in similar_chunks
-                if chunk.get('similarity', 0) > 0.4
+                if chunk.get('similarity', 0) > 0.25
             ]
             logger.info(f"After filtering: {len(filtered_chunks)} relevant chunks")
 
@@ -119,8 +119,8 @@ class QueryService:
                     "sources": []
                 }
 
-            # Take top 5
-            similar_chunks = filtered_chunks[:5]
+            # Take top 8
+            similar_chunks = filtered_chunks[:8]
 
             # -----------------------------
             # Build enhanced context
@@ -216,13 +216,16 @@ class QueryService:
                 conversation_history = self._get_conversation_history(user_id)
 
                 prompt = f"""
-                You are an expert document analysis assistant. Answer ONLY using information from the provided context.
+                You are a helpful document analysis assistant. Answer questions using ONLY the information from the provided context
 
-                IMPORTANT:
-                1. If information is not in the context, say "I don't have information about this in my knowledge base."
-                2. Provide detailed answers with specific examples from the source material.
-                3. Always cite your sources with document names.
+                CONTEXT ANALYSIS GUIDELINES:
+                1. For specific questions: Provide detailed answers with exact information from the context
+                2. For vague/general questions: Synthesize an overview using relevant information from multiple documents
+                3. If information is completely missing: Say "I don't have specific information about this in my knowledge base"
+                4. Always stay grounded in the provided context - do not add external knowledge
+                5. Connect related information across different documents when relevant
 
+                CONVERSATION HISTORY:
                 {conversation_history}
 
                 CONTEXT INFORMATION:
@@ -230,7 +233,9 @@ class QueryService:
 
                 QUESTION: {question}
 
-                Provide a thorough, well-structured answer with source references.
+                Provide a helpful, well-structured answer that synthesizes information across documents when relevant.
+                If the question is vague, provide a general overview using the available context.
+            Always cite which documents you're drawing information from.
                 """
 
                 loop = asyncio.get_event_loop()
@@ -272,17 +277,53 @@ class QueryService:
         )
 
     # ======================================================
-    # Helper Methods (Conversation & Context)
+    # NEW: Cross-Document Context Builder
     # ======================================================
-    def _build_enhanced_context(self, chunks: List[Dict[str, Any]]) -> tuple:
-        context_str = ""
-        sources = set()
-        for i, chunk in enumerate(chunks):
+    def _build_cross_document_context(self, chunks: List[Dict[str, Any]]) -> tuple:
+        """Enhanced context building that groups by document and preserves relationships"""
+        if not chunks:
+            return "", []
+
+        documents = {}
+        for chunk in chunks:
             source = chunk.get('metadata', {}).get('source', 'Unknown document')
-            sources.add(source)
-            context_str += f"[Source {i + 1}: {source}]\n{chunk['chunk_text']}\n\n"
+            document_id = chunk.get('metadata', {}).get('document_id', 'unknown')
+
+            if document_id not in documents:
+                documents[document_id] = {
+                    'name': source,
+                    'chunks': [],
+                    'chunk_count': 0
+                }
+
+            documents[document_id]['chunks'].append(chunk)
+            documents[document_id]['chunk_count'] += 1
+
+        context_str = "KNOWLEDGE BASE CONTEXT:\n\n"
+        sources = set()
+
+        for doc_id, doc_info in documents.items():
+            doc_name = doc_info['name']
+            sources.add(doc_name)
+
+            context_str += f"📄 DOCUMENT: {doc_name} ({doc_info['chunk_count']} relevant sections)\n"
+            context_str += "─" * 50 + "\n"
+
+            sorted_chunks = sorted(
+                doc_info['chunks'],
+                key=lambda x: x.get('metadata', {}).get('chunk_index', 0)
+            )
+
+            for i, chunk in enumerate(sorted_chunks):
+                context_str += f"\nSection {i+1}:\n{chunk['chunk_text']}\n\n"
+
+            context_str += "\n" + "=" * 60 + "\n\n"
+
         return context_str, list(sources)
 
+    # ======================================================
+    # Conversation Handling
+    # ======================================================
     def _update_conversation_context(self, user_id: str, question: str, answer: str):
         if user_id not in self.conversation_context:
             self.conversation_context[user_id] = []

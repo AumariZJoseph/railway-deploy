@@ -10,7 +10,7 @@ class EnhancedChunking:
         self.base_chunk_overlap = 150
     
     def chunk_text(self, text: str, metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Enhanced chunking that preserves document structure better"""
+        """Enhanced chunking with better cross-document metadata"""
         try:
             # Clean and structure the text first
             cleaned_text = self._clean_and_structure_text(text, metadata.get('source', ''))
@@ -27,7 +27,22 @@ class EnhancedChunking:
                 chunk_size = 800  # Smaller chunks for small files
                 chunk_overlap = 100
             
-            return self._semantic_chunking(cleaned_text, metadata, chunk_size, chunk_overlap)
+            # Perform semantic chunking
+            chunks = self._semantic_chunking(cleaned_text, metadata, chunk_size, chunk_overlap)
+
+            # ----------------------------------------------------
+            # ✨ Enhanced metadata for cross-document understanding
+            # ----------------------------------------------------
+            for i, chunk in enumerate(chunks):
+                chunk["metadata"]["chunk_index"] = i
+                chunk["metadata"]["total_chunks"] = len(chunks)
+                # Add document-level identifiers for better grouping
+                chunk["metadata"]["document_context"] = (
+                    f"Document: {metadata.get('source', 'Unknown')} - Section {i+1} of {len(chunks)}"
+                )
+
+            logger.info(f"Enhanced chunking created {len(chunks)} chunks with cross-document metadata")
+            return chunks
             
         except Exception as e:
             logger.error(f"Enhanced chunking error: {str(e)}")

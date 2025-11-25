@@ -16,7 +16,6 @@ from services.error_handler import (
     log_error
 )
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,7 @@ class FastIngestService:
             file_name = file.filename
             
             logger.info(f"Starting ingestion for {file_name} ({len(content)} bytes)")
-            
+
             # Create temp file
             with tempfile.NamedTemporaryFile(delete=False, suffix=file_name) as temp_file:
                 temp_file.write(content)
@@ -114,7 +113,7 @@ class FastIngestService:
             except Exception as e:
                 raise ExternalServiceError(f"Chunking failed: {str(e)}", "Error splitting document content.")
 
-            # Step 5: Process chunks
+            # Step 5: Process chunks (updated)
             await self._process_chunks_optimized(document["id"], user_id, chunks)
             logger.info(f"Ingestion complete: {filename}")
 
@@ -180,19 +179,30 @@ class FastIngestService:
             logger.error(f"Background file processing failed: {str(e)}")
             raise
 
+    # ------------------------------------------------------------
+    # ✅ UPDATED METHOD — DOCUMENT RELATIONSHIPS PRESERVED
+    # ------------------------------------------------------------
     async def _process_chunks_optimized(self, document_id: str, user_id: str, chunks: list):
-        """Optimized sequential chunk processing with better error handling"""
+        """Process chunks with enhanced metadata for cross-document queries"""
         if not chunks:
             return
 
         try:
             batch_size = 300
             total_batches = (len(chunks) + batch_size - 1) // batch_size
-            logger.info(f"Processing {len(chunks)} chunks in {total_batches} batches...")
+            logger.info(f"Processing {len(chunks)} chunks in {total_batches} batches with enhanced metadata...")
 
             successful_chunks = 0
+
             for batch_num in range(0, len(chunks), batch_size):
                 batch_chunks = chunks[batch_num:batch_num + batch_size]
+
+                # Enhanced metadata
+                for i, chunk in enumerate(batch_chunks):
+                    chunk["metadata"]["document_id"] = document_id
+                    chunk["metadata"]["batch_index"] = batch_num + i
+                    chunk["metadata"]["user_id"] = user_id
+
                 chunk_texts = [chunk["text"] for chunk in batch_chunks]
 
                 try:
@@ -218,7 +228,7 @@ class FastIngestService:
                     loop = asyncio.get_event_loop()
                     await loop.run_in_executor(None, supabase_client.insert_chunks, chunk_records)
                     successful_chunks += len(chunk_records)
-                    logger.info(f"Inserted batch {batch_num//batch_size + 1}/{total_batches}")
+                    logger.info(f"Inserted batch {batch_num//batch_size + 1}/{total_batches} with enhanced metadata")
                     if batch_num + batch_size < len(chunks):
                         await asyncio.sleep(0.1)
                 except Exception as e:
@@ -268,7 +278,6 @@ class FastIngestService:
             loop = asyncio.get_event_loop()
 
             await loop.run_in_executor(None, supabase_client.soft_delete_document, user_id, file_name)
-
             await loop.run_in_executor(None, supabase_client.delete_file, user_id, file_name)
 
             logger.info(f"Deleted: {file_name}")

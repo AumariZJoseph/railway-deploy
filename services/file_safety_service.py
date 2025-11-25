@@ -23,13 +23,6 @@ class FileSafetyService:
             # Text files
             'text/plain': ['.txt'],
             
-            # CSV files
-            'text/csv': ['.csv'],
-            'application/csv': ['.csv'],
-            
-            # Excel files
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-            'application/vnd.ms-excel': ['.xls'],
         }
         
         # Maximum file sizes (in bytes)
@@ -38,9 +31,6 @@ class FileSafetyService:
             '.docx': 10 * 1024 * 1024,     # 3MB
             '.doc': 10 * 1024 * 1024,      # 3MB
             '.txt': 1 * 1024 * 1024,      # 1MB
-            '.csv': 5 * 1024 * 1024,      # 5MB
-            '.xlsx': 5 * 1024 * 1024,     # 5MB
-            '.xls': 5 * 1024 * 1024,      # 5MB
         }
         
         # Known malicious file signatures (first few bytes)
@@ -89,8 +79,6 @@ class FileSafetyService:
                     return self._validate_pdf_safety(file_path)
                 elif file_extension in ['.docx', '.doc']:
                     return self._validate_word_safety(file_path, file_extension)
-                elif file_extension in ['.xlsx', '.xls', '.csv']:
-                    return self._validate_spreadsheet_safety(file_path, file_extension)
                 elif file_extension == '.txt':
                     return self._validate_text_safety(file_path)
             except Exception as file_specific_error:
@@ -252,43 +240,7 @@ class FileSafetyService:
         except Exception as e:
             return False, f"Word document validation failed: {str(e)}"
 
-    def _validate_spreadsheet_safety(self, file_path: str, file_extension: str) -> Tuple[bool, str]:
-        """Spreadsheet safety validation"""
-        try:
-            import pandas as pd
-            
-            if file_extension == '.csv':
-                # Check for extremely wide CSV (potential DoS)
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    first_line = f.readline()
-                    if first_line.count(',') > 1000:  # More than 1000 columns
-                        return False, "CSV has too many columns (potential DoS)"
-                
-                df = pd.read_csv(file_path, nrows=5)
-                
-            elif file_extension in ['.xlsx', '.xls']:
-                # Excel files - check for macros and embedded objects
-                if file_extension == '.xlsx':
-                    import zipfile
-                    with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                        file_list = zip_ref.namelist()
-                        
-                        # Check for macro files
-                        macro_files = [f for f in file_list if 'macros' in f.lower() or 'vba' in f.lower()]
-                        if macro_files:
-                            return False, "Excel file contains macros (security risk)"
-                
-                # Try to read the file
-                df = pd.read_excel(file_path, nrows=5)
-                
-                # Check for reasonable dimensions
-                if df.shape[1] > 1000:  # More than 1000 columns
-                    return False, "Excel file has too many columns (potential DoS)"
-            
-            return True, "Spreadsheet appears safe"
-            
-        except Exception as e:
-            return False, f"Spreadsheet validation failed: {str(e)}"
+
 
     def _validate_text_safety(self, file_path: str) -> Tuple[bool, str]:
         """Text file safety validation"""
