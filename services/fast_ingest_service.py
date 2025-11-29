@@ -27,6 +27,13 @@ class FastIngestService:
     async def ingest_file(self, user_id: str, file) -> dict:
         """Fast file ingestion with comprehensive error handling"""
         try:
+            """check file count limit"""
+            active_docs = supabase_client.get_active_documents(user_id)
+            if len(active_docs) >= 3:
+                raise ValidationError(
+                    f"File limit reached ({self.max_files} max)",
+                    f"You've reached the maximum file limit ({self.max_files}). Join our waitlist for the full version!"
+                )     
             # Validate inputs
             if not user_id or not isinstance(user_id, str):
                 raise ValidationError("Invalid user ID", "Invalid user identifier.")

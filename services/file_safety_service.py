@@ -27,10 +27,10 @@ class FileSafetyService:
         
         # Maximum file sizes (in bytes)
         self.max_file_sizes = {
-            '.pdf': 10 * 1024 * 1024,      # 3MB
-            '.docx': 10 * 1024 * 1024,     # 3MB
-            '.doc': 10 * 1024 * 1024,      # 3MB
-            '.txt': 1 * 1024 * 1024,      # 1MB
+            '.pdf': 5 * 1024 * 1024,      # 5MB
+            '.docx': 5 * 1024 * 1024,     # 5MB
+            '.doc': 5 * 1024 * 1024,      # 5MB
+            '.txt': 5 * 1024 * 1024,      # 5MB
         }
         
         # Known malicious file signatures (first few bytes)

@@ -1,3 +1,4 @@
+from services import supabase_client
 from services.sanitization_service import sanitization_service
 from services.rate_limiter import rate_limiter
 from fastapi import APIRouter, HTTPException
@@ -47,3 +48,16 @@ async def delete_user_file(user_id: str, filename: str):
             status_code=500,
             detail=f"Error deleting file: {str(e)}"
         )
+
+@router.get("/usage/{user_id}")
+async def get_user_usage(user_id: str):
+    """Get user's current trial usage"""
+    try:
+        sanitized_user_id = sanitization_service.sanitize_user_id(user_id)
+        usage = supabase_client.get_user_usage(sanitized_user_id)
+        return {
+            "status": "success",
+            "usage": usage
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting usage: {str(e)}")
