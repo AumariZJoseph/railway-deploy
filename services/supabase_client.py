@@ -340,31 +340,31 @@ class SupabaseClient:
         return result.data[0]
     
 
-def get_user_usage(self, user_id: str) -> Dict[str, Any]:
-    """Get user's current usage"""
-    try:
-        settings = self.get_user_settings(user_id)
-        active_docs = self.get_active_documents(user_id)
-        
-        return {
-            "files_used": len(active_docs),
-            "queries_used": settings.get('query_count', 0),
-            "files_limit": 3,
-            "queries_limit": 20
-        }
-    except Exception as e:
-        logger.error(f"Error in get_user_usage for user {user_id}: {str(e)}")
-        raise
+    def get_user_usage(self, user_id: str) -> Dict[str, Any]:  # ✅ INSIDE CLASS
+        """Get user's current usage"""
+        try:
+            settings = self.get_user_settings(user_id)
+            active_docs = self.get_active_documents(user_id)
+            
+            return {
+                "files_used": len(active_docs),
+                "queries_used": settings.get('query_count', 0),
+                "files_limit": 3,
+                "queries_limit": 20
+            }
+        except Exception as e:
+            logger.error(f"Error in get_user_usage for user {user_id}: {str(e)}")
+            raise
 
-def increment_query_count(self, user_id: str):
-    """Increment user's query count"""
-    current_settings = self.get_user_settings(user_id)
-    new_count = current_settings.get('query_count', 0) + 1
-    
-    self.client.table("user_settings")\
-        .update({"query_count": new_count})\
-        .eq("user_id", user_id)\
-        .execute()
+    def increment_query_count(self, user_id: str):  # ✅ INSIDE CLASS
+        """Increment user's query count"""
+        current_settings = self.get_user_settings(user_id)
+        new_count = current_settings.get('query_count', 0) + 1
+        
+        self.client.table("user_settings")\
+            .update({"query_count": new_count})\
+            .eq("user_id", user_id)\
+            .execute()
 
 # Global instance
 supabase_client = SupabaseClient()
