@@ -123,9 +123,9 @@ class QueryService:
             similar_chunks = filtered_chunks[:8]
 
             # -----------------------------
-            # Build enhanced context
+            # Build enhanced cross-documentcontext
             # -----------------------------
-            context_str, sources = self._build_enhanced_context(similar_chunks)
+            context_str, sources = self._build_cross_document_context(similar_chunks)
 
             # -----------------------------
             # Generate answer with retry
