@@ -351,15 +351,19 @@ def increment_query_count(self, user_id: str):
 
 def get_user_usage(self, user_id: str) -> Dict[str, Any]:
     """Get user's current usage"""
-    settings = self.get_user_settings(user_id)
-    active_docs = self.get_active_documents(user_id)
-    
-    return {
-        "files_used": len(active_docs),
-        "queries_used": settings.get('query_count', 0),
-        "files_limit": 3,
-        "queries_limit": 20
-    }
+    try:
+        settings = self.get_user_settings(user_id)
+        active_docs = self.get_active_documents(user_id)
+        
+        return {
+            "files_used": len(active_docs),
+            "queries_used": settings.get('query_count', 0),
+            "files_limit": 3,
+            "queries_limit": 20
+        }
+    except Exception as e:
+        logger.error(f"Error in get_user_usage for user {user_id}: {str(e)}")
+        raise
 
 
 # Global instance

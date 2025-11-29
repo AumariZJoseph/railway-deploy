@@ -1,4 +1,4 @@
-from services import supabase_client
+from services.supabase_client import supabase_client
 from services.sanitization_service import sanitization_service
 from services.rate_limiter import rate_limiter
 from fastapi import APIRouter, HTTPException
@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 async def get_user_files(user_id: str):
     """Get user's files with input sanitization"""
     try:
-        # ✅ ADD SANITIZATION HERE
         sanitized_user_id = sanitization_service.sanitize_user_id(user_id)
         files = await fast_ingest_service.get_user_files(sanitized_user_id)
         return {
@@ -29,17 +28,14 @@ async def get_user_files(user_id: str):
 @router.delete("/files/{user_id}/{filename}")
 async def delete_user_file(user_id: str, filename: str):
     """Delete user's file with input sanitization"""
-    # ✅ Check rate limit for file operations
     is_limited, message = rate_limiter.is_rate_limited(user_id, "file_operations")
     if is_limited:
         raise HTTPException(status_code=429, detail=message)
     
     try:
-        # ✅ ADD SANITIZATION HERE
         sanitized_user_id = sanitization_service.sanitize_user_id(user_id)
         sanitized_filename = sanitization_service.sanitize_filename(filename)
         
-        # Use sanitized inputs for deletion
         result = await fast_ingest_service.delete_file(sanitized_user_id, sanitized_filename)
         return result
     except Exception as e:
@@ -53,11 +49,19 @@ async def delete_user_file(user_id: str, filename: str):
 async def get_user_usage(user_id: str):
     """Get user's current trial usage"""
     try:
+        print(f"DEBUG: Getting usage for user: {user_id}")  # Add this
+        print(f"DEBUG: supabase_client type: {type(supabase_client)}")  # Add this
+        
         sanitized_user_id = sanitization_service.sanitize_user_id(user_id)
         usage = supabase_client.get_user_usage(sanitized_user_id)
+        
+        print(f"DEBUG: Usage result: {usage}")  # Add this
+        
         return {
             "status": "success",
             "usage": usage
         }
     except Exception as e:
+        print(f"DEBUG: Error in get_user_usage: {str(e)}")  # Add this
+        logger.error(f"Get usage error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting usage: {str(e)}")
