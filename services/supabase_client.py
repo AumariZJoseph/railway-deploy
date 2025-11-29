@@ -333,7 +333,8 @@ class SupabaseClient:
         default_settings = {
             "user_id": user_id,
             "max_files": 5,
-            "max_file_size_mb": 10
+            "max_file_size_mb": 10,
+            "query_count": 0
         }
         result = self.client.table("user_settings").insert(default_settings).execute()
         return result.data[0]

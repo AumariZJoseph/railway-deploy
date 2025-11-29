@@ -76,7 +76,7 @@ class QueryService:
             # -------------------------
             # Only increment if successful
             # -------------------------
-            supabase_client.increment_query_count(user_id)
+            self.supabase_client.increment_query_count(user_id)
 
             return result
 
