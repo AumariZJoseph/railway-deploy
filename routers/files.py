@@ -53,11 +53,17 @@ async def delete_user_file(user_id: str, filename: str):
 async def get_user_usage(user_id: str):
     """Get user's current trial usage"""
     try:
+        # Add CORS handling for OPTIONS requests
         sanitized_user_id = sanitization_service.sanitize_user_id(user_id)
         usage = supabase_client.get_user_usage(sanitized_user_id)
         return {
-            "status": "success",
+            "status": "success", 
             "usage": usage
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting usage: {str(e)}")
+    
+# ✅ ADD THIS: Handle OPTIONS requests for CORS
+@router.options("/usage/{user_id}")
+async def options_user_usage():
+    return {"status": "ok"}
