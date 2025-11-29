@@ -1,10 +1,9 @@
-from services import supabase_client
 from services.sanitization_service import sanitization_service
 from services.rate_limiter import rate_limiter
 from fastapi import APIRouter, HTTPException
 import logging
 from services.fast_ingest_service import fast_ingest_service
-from services.supabase_client import supabase_client
+from services.supabase_client import supabase_client   # ✅ REQUIRED IMPORT
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 async def get_user_files(user_id: str):
     """Get user's files with input sanitization"""
     try:
-        # ✅ ADD SANITIZATION HERE
+        # ✅ Sanitize user_id
         sanitized_user_id = sanitization_service.sanitize_user_id(user_id)
         files = await fast_ingest_service.get_user_files(sanitized_user_id)
         return {
@@ -27,16 +26,18 @@ async def get_user_files(user_id: str):
             detail=f"Error getting files: {str(e)}"
         )
 
+
 @router.delete("/files/{user_id}/{filename}")
 async def delete_user_file(user_id: str, filename: str):
     """Delete user's file with input sanitization"""
-    # ✅ Check rate limit for file operations
+    
+    # ✅ Rate limit file operations
     is_limited, message = rate_limiter.is_rate_limited(user_id, "file_operations")
     if is_limited:
         raise HTTPException(status_code=429, detail=message)
     
     try:
-        # ✅ ADD SANITIZATION HERE
+        # ✅ Sanitize inputs
         sanitized_user_id = sanitization_service.sanitize_user_id(user_id)
         sanitized_filename = sanitization_service.sanitize_filename(filename)
         
@@ -50,21 +51,23 @@ async def delete_user_file(user_id: str, filename: str):
             detail=f"Error deleting file: {str(e)}"
         )
 
+
+# ------------------------------------------------------
+# ✅ NEW ENDPOINT: TRIAL USAGE
+# ------------------------------------------------------
 @router.get("/usage/{user_id}")
 async def get_user_usage(user_id: str):
     """Get user's current trial usage"""
     try:
-        # Add CORS handling for OPTIONS requests
         sanitized_user_id = sanitization_service.sanitize_user_id(user_id)
         usage = supabase_client.get_user_usage(sanitized_user_id)
         return {
-            "status": "success", 
+            "status": "success",
             "usage": usage
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting usage: {str(e)}")
-    
-# ✅ ADD THIS: Handle OPTIONS requests for CORS
-@router.options("/usage/{user_id}")
-async def options_user_usage():
-    return {"status": "ok"}
+        logger.error(f"Usage fetch error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting usage: {str(e)}"
+        )
