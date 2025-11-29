@@ -4,6 +4,7 @@ from services.rate_limiter import rate_limiter
 from fastapi import APIRouter, HTTPException
 import logging
 from services.fast_ingest_service import fast_ingest_service
+from services.supabase_client import supabase_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
