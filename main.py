@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from routers import query, ingest, auth, files
+from routers import waitlist
 import os
 from logging_config import setup_logging
 from services.health_check import test_supabase_connection
@@ -44,6 +45,7 @@ app.include_router(query.router, prefix="/api/v1")
 app.include_router(ingest.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(files.router, prefix="/api/v1")
+app.include_router(waitlist.router, prefix="/api/v1")
 
 
 @app.get("/health")
