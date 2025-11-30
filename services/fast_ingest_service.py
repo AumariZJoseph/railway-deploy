@@ -257,24 +257,32 @@ class FastIngestService:
                 "Unexpected error during chunk processing."
             )
 
-    async def _check_file_limit(self, user_id: str):
-        """Check if user can upload more files"""
-        try:
-            settings = supabase_client.get_user_settings(user_id)
-            active_docs = supabase_client.get_active_documents(user_id)
-            if len(active_docs) >= settings["max_files"]:
-                raise ValidationError(
-                    f"File limit reached ({settings['max_files']} max)",
-                    f"You've reached the maximum file limit ({settings['max_files']})."
-                )
-        except Exception as e:
-            if isinstance(e, ValidationError):
-                raise
-            log_error(e, user_id, "_check_file_limit")
-            raise ExternalServiceError(
-                f"File limit check failed: {str(e)}",
-                "Unable to verify file limits."
+async def _check_file_limit(self, user_id: str):
+    """Check if user can upload more files - also check if trial is complete"""
+    try:
+        # ✅ FIRST: Check if trial is complete (query limit reached)
+        settings = supabase_client.get_user_settings(user_id)
+        if settings.get('query_count', 0) >= 20:
+            raise ValidationError(
+                "Trial complete - query limit reached",
+                "You've used all 20 queries. Join our waitlist for the full version!"
             )
+        
+        # ✅ SECOND: Check file limit
+        active_docs = supabase_client.get_active_documents(user_id)
+        if len(active_docs) >= 3:
+            raise ValidationError(
+                "File limit reached (3 max)",
+                "You've reached the maximum file limit (3). Join our waitlist for the full version!"
+            )
+    except Exception as e:
+        if isinstance(e, ValidationError):
+            raise
+        log_error(e, user_id, "_check_file_limit")
+        raise ExternalServiceError(
+            f"File limit check failed: {str(e)}",
+            "Unable to verify file limits."
+        )
 
     async def delete_file(self, user_id: str, file_name: str) -> dict:
         """Delete file and its chunks with error handling"""
